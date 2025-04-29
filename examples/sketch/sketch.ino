@@ -43,8 +43,8 @@ Compatible with all TTGO camera products, written by LewisHe
 /***************************************
  *  WiFi
  **************************************/
-#define WIFI_SSID "YourSSID"
-#define WIFI_PASSWD "YourPASSWORD"
+#define WIFI_SSID "Bonus"
+#define WIFI_PASSWD "123456789"
 
 #include "select_pins.h"
 
@@ -166,8 +166,8 @@ bool setupDisplay()
     tft.fillScreen(TFT_BLACK);
     tft.setTextSize(2);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("TFT_eSPI", tft.width() / 2, tft.height() / 2);
-    tft.drawString("LilyGo Camera Plus", tft.width() / 2, tft.height() / 2 + 20);
+    tft.drawString("I GET", tft.width() / 2, tft.height() / 2);
+    tft.drawString("HEE KUY TAD", tft.width() / 2, tft.height() / 2 + 20);
     pinMode(TFT_BL_PIN, OUTPUT);
     digitalWrite(TFT_BL_PIN, HIGH);
 #endif
