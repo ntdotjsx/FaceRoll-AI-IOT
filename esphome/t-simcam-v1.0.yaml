@@ -1,0 +1,39 @@
+# ESP Home Configure yaml
+
+esphome:
+  name: t-simcam
+  platform: ESP32
+  board: esp32s3box
+
+wifi:
+  ssid: "ssid"
+  password: "password"
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+
+mqtt:
+  broker: 'ip address'
+  # username: 'user'
+  # password: 'password'
+
+# ttgo_camera_mini configuration
+esp32_camera:
+  external_clock:
+    pin: GPIO14
+    frequency: 20MHz
+  i2c_pins:
+    sda: GPIO4
+    scl: GPIO5
+  data_pins: [GPIO11, GPIO9, GPIO8, GPIO10, GPIO12, GPIO17, GPIO16, GPIO15]
+  vsync_pin: GPIO6
+  href_pin: GPIO7
+  pixel_clock_pin: GPIO13
+
+  # Image settings
+  name: TTGO T-SIMCAM
