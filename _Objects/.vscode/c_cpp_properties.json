@@ -1,0 +1,18 @@
+{
+    "configurations": [
+      {
+        "name": "ESP-IDF",
+        "includePath": [
+          "${workspaceFolder}/**",
+          "C:/Espressif/frameworks/esp-idf-v5.4.1/components/**"
+        ],
+        "defines": [],
+        "compilerPath": "C:/Espressif/tools/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc.exe",
+        "cStandard": "c11",
+        "cppStandard": "c++17",
+        "intelliSenseMode": "windows-gcc-x64"
+      }
+    ],
+    "version": 4
+  }
+  
