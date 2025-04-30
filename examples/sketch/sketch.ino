@@ -38,23 +38,22 @@ bool sendToAI(camera_fb_t *fb)
     WiFiClient client;
     HTTPClient http;
 
-    http.begin(client, "http://<AI-Server-IP>:8000/upload"); // <-- เปลี่ยน <AI-Server-IP> เป็น IP จริง
+    http.begin(client, "http://2bf2-58-10-245-203.ngrok-free.app/detect");
     http.addHeader("Content-Type", "image/jpeg");
 
     int httpResponseCode = http.POST(fb->buf, fb->len);
 
-    Serial.printf("[AI] Response code: %d\n", httpResponseCode);
     if (httpResponseCode > 0) {
         String response = http.getString();
-        Serial.println("[AI] Response payload: " + response);
+        Serial.println("🧠 Response from AI:");
+        Serial.println(response);
     } else {
-        Serial.println("[AI] Failed to connect or invalid response");
+        Serial.printf("❌ POST failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
     }
 
     http.end();
     return httpResponseCode == 200;
 }
-
 
 bool setupSensor()
 {
