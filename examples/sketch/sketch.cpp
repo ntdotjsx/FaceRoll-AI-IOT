@@ -202,17 +202,10 @@ bool setupCamera()
     }
 
     sensor_t *s = esp_camera_sensor_get();
-    // initial sensors are flipped vertically and colors are a bit saturated
-    // if (s->id.PID == OV3660_PID)
-    // {
-    //     s->set_vflip(s, 1);       // flip it back
-    //     s->set_brightness(s, 1);  // up the blightness just a bit
-    //     s->set_saturation(s, -2); // lower the saturation
-    // }
 
     s->set_contrast(s, 1);
-    s->set_brightness(s, 1);  // up the blightness just a bit
-    s->set_saturation(s, -2); // lower the saturation
+    s->set_brightness(s, 1); 
+    s->set_saturation(s, -2); 
 
     s->set_hmirror(s, 1);
     s->set_framesize(s, FRAMESIZE_QVGA);
@@ -292,7 +285,6 @@ void setup()
 
     // ตั้งค่าเครือข่าย
     setupNetwork();
-    // ข้อความแสดงบน TFT
     Serial.print("Camera Ready! Use 'http://");
     Serial.print(ipAddress);
     Serial.println("' to connect");
@@ -321,13 +313,10 @@ void loopDisplay()
         return;
     }
 
-    tft.fillScreen(TFT_BLACK);
-    // แสดง JPEG ที่ตำแหน่ง 0,0
+    // tft.fillScreen(TFT_BLACK);
     TJpgDec.drawJpg(0, 0, fb->buf, fb->len);
-
     esp_camera_fb_return(fb);
-
-    delay(100); // ปรับเฟรมเรต
+    delay(30);
 }
 
 void loop()
@@ -339,12 +328,12 @@ void loop()
         if (fb)
         {
             sendToAI(fb);
-            esp_camera_fb_return(fb); // คืนค่าภาพหลังส่ง
+            esp_camera_fb_return(fb);
         }
         else
         {
             Serial.println("Failed to capture image from camera");
         }
-        delay(300); // ป้องกันกดค้างหรือ bounce
+        delay(300);
     }
 }
