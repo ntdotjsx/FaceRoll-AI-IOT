@@ -38,10 +38,17 @@ bool sendToAI(camera_fb_t *fb)
     WiFiClient client;
     HTTPClient http;
 
+    // URL ที่จะส่งข้อมูลไปยัง server
     http.begin(client, "http://2bf2-58-10-245-203.ngrok-free.app/detect");
-    http.addHeader("Content-Type", "image/jpeg");
+    http.addHeader("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"); // กำหนด boundary
 
-    int httpResponseCode = http.POST(fb->buf, fb->len);
+    // สร้าง body ของ request
+    String body = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n";
+    body += "Content-Disposition: form-data; name=\"file\"; filename=\"image.jpg\"\r\n";
+    body += "Content-Type: image/jpeg\r\n\r\n";
+
+    // ส่งคำขอ POST
+    int httpResponseCode = http.POST(body + String((char*)fb->buf, fb->len) + "\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--\r\n");
 
     if (httpResponseCode > 0) {
         String response = http.getString();
