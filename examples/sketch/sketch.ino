@@ -17,8 +17,6 @@
 #define WIFI_SSID "Bonus"
 #define WIFI_PASSWD "123456789"
 
-#define DISCORD_WEBHOOK_URL "https://discord.com/api/webhooks/1366887058794352640/Wkh8438wAedRXaJwffMOgzGGk5SrjUFTtYSwLy1x9_9V8q8t66yW-TzpAaTbiuRdHYIe"
-
 #include "select_pins.h"
 #include <TJpg_Decoder.h>
 
@@ -33,63 +31,30 @@ String ipAddress = "";
 TFT_eSPI tft = TFT_eSPI();
 #endif
 
-bool sendToDiscord(camera_fb_t *fb)
+bool sendToAI(camera_fb_t *fb)
 {
-    if (!fb)
-    {
-        Serial.println("No image to send");
-        return false;
+    if (!fb) return false;
+
+    WiFiClient client;
+    HTTPClient http;
+
+    http.begin(client, "http://<AI-Server-IP>:8000/upload"); // <-- เปลี่ยน <AI-Server-IP> เป็น IP จริง
+    http.addHeader("Content-Type", "image/jpeg");
+
+    int httpResponseCode = http.POST(fb->buf, fb->len);
+
+    Serial.printf("[AI] Response code: %d\n", httpResponseCode);
+    if (httpResponseCode > 0) {
+        String response = http.getString();
+        Serial.println("[AI] Response payload: " + response);
+    } else {
+        Serial.println("[AI] Failed to connect or invalid response");
     }
 
-    WiFiClientSecure client;
-    client.setInsecure(); // ไม่ตรวจสอบ SSL
-
-    // ใช้ Webhook URL จาก #define
-    String webhookURL = DISCORD_WEBHOOK_URL;
-
-    if (!client.connect("discord.com", 443))
-    {
-        Serial.println("Connection to Discord failed");
-        return false;
-    }
-
-    String boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
-    String head = "--" + boundary + "\r\n" +
-                  "Content-Disposition: form-data; name=\"payload_json\"\r\n\r\n" +
-                  "{\"content\": \"📸 ชื่อ: นายธนพล พ่ออามาตย์\"}\r\n" +
-                  "--" + boundary + "\r\n" +
-                  "Content-Disposition: form-data; name=\"file\"; filename=\"image.jpg\"\r\n" +
-                  "Content-Type: image/jpeg\r\n\r\n";
-
-    String tail = "\r\n--" + boundary + "--\r\n";
-
-    uint32_t contentLength = head.length() + fb->len + tail.length();
-
-    // ส่ง HTTP POST request พร้อมกับข้อมูล
-    client.print(String("POST ") + webhookURL + " HTTP/1.1\r\n" +
-                 "Host: discord.com\r\n" +
-                 "User-Agent: TTGO-Camera\r\n" +
-                 "Content-Type: multipart/form-data; boundary=" + boundary + "\r\n" +
-                 "Content-Length: " + contentLength + "\r\n\r\n");
-
-    client.print(head);
-    client.write(fb->buf, fb->len);
-    client.print(tail);
-
-    // อ่าน response
-    while (client.connected())
-    {
-        String line = client.readStringUntil('\n');
-        if (line == "\r")
-            break;
-    }
-
-    // รับข้อมูล response จาก Discord
-    String payload = client.readString();
-    Serial.println("Discord response: " + payload);
-
-    return true;
+    http.end();
+    return httpResponseCode == 200;
 }
+
 
 bool setupSensor()
 {
@@ -312,8 +277,7 @@ void setup()
     camera_fb_t *fb = esp_camera_fb_get();
     if (fb)
     {
-        // ส่งภาพไป Discord
-        sendToDiscord(fb);
+        sendToAI(fb);
         esp_camera_fb_return(fb); // คืนค่าภาพหลังส่ง
     }
     else
