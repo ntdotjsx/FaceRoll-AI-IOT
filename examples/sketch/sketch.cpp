@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 #include <WiFi.h>
 #include <Wire.h>
 #include "esp_camera.h"
@@ -16,6 +18,8 @@
  **************************************/
 #define WIFI_SSID "Bonus"
 #define WIFI_PASSWD "123456789"
+
+#define BUTTON_PIN 23
 
 #include "select_pins.h"
 #include <TJpg_Decoder.h>
@@ -247,6 +251,7 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap)
 
 void setup()
 {
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
     Serial.begin(115200);
 
     TJpgDec.setSwapBytes(true);
@@ -287,19 +292,6 @@ void setup()
 
     // ตั้งค่าเครือข่าย
     setupNetwork();
-
-    // ตรวจสอบสถานะกล้องว่าเตรียมพร้อมแล้วหรือไม่
-    camera_fb_t *fb = esp_camera_fb_get();
-    if (fb)
-    {
-        sendToAI(fb);
-        esp_camera_fb_return(fb); // คืนค่าภาพหลังส่ง
-    }
-    else
-    {
-        Serial.println("Failed to capture image from camera");
-    }
-
     // ข้อความแสดงบน TFT
     Serial.print("Camera Ready! Use 'http://");
     Serial.print(ipAddress);
@@ -341,4 +333,18 @@ void loopDisplay()
 void loop()
 {
     loopDisplay();
+    if (digitalRead(BUTTON_PIN) == LOW)
+    {
+        camera_fb_t *fb = esp_camera_fb_get();
+        if (fb)
+        {
+            sendToAI(fb);
+            esp_camera_fb_return(fb); // คืนค่าภาพหลังส่ง
+        }
+        else
+        {
+            Serial.println("Failed to capture image from camera");
+        }
+        delay(300); // ป้องกันกดค้างหรือ bounce
+    }
 }
