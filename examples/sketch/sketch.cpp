@@ -204,11 +204,12 @@ bool setupCamera()
     sensor_t *s = esp_camera_sensor_get();
 
     s->set_contrast(s, 1);
-    s->set_brightness(s, 1); 
-    s->set_saturation(s, -2); 
+    s->set_brightness(s, 1);
+    s->set_saturation(s, -2);
 
     s->set_hmirror(s, 1);
-    s->set_framesize(s, FRAMESIZE_QVGA);
+    s->set_framesize(s, FRAMESIZE_QQVGA); // 160x120 หรือ
+    // s->set_framesize(s, FRAMESIZE_QVGA); // 320x240
 
     return true;
 }
@@ -313,27 +314,35 @@ void loopDisplay()
         return;
     }
 
-    // tft.fillScreen(TFT_BLACK);
-    TJpgDec.drawJpg(0, 0, fb->buf, fb->len);
+    // คำนวณตำแหน่งที่ให้ภาพอยู่กลางจอ
+    int x_pos = (tft.width() - fb->width) / 2; // คำนวณตำแหน่ง X (แนวนอน)
+    int y_pos = (tft.height() - fb->height) / 2; // คำนวณตำแหน่ง Y (แนวตั้ง)
+
+    tft.startWrite();
+    TJpgDec.drawJpg(x_pos, y_pos, fb->buf, fb->len); // วาดภาพที่ตำแหน่งกลางจอ
+    tft.endWrite();
+
     esp_camera_fb_return(fb);
-    delay(30);
 }
+
 
 void loop()
 {
     loopDisplay();
     if (digitalRead(BUTTON_PIN) == LOW)
     {
+        sensor_t *s = esp_camera_sensor_get();
+        s->set_framesize(s, FRAMESIZE_QVGA);
+        delay(100); // รอให้กล้องเปลี่ยนขนาดภาพ
+
         camera_fb_t *fb = esp_camera_fb_get();
         if (fb)
         {
             sendToAI(fb);
             esp_camera_fb_return(fb);
         }
-        else
-        {
-            Serial.println("Failed to capture image from camera");
-        }
-        delay(300);
+
+        s->set_framesize(s, FRAMESIZE_QQVGA); // เปลี่ยนกลับ
+        delay(100);
     }
 }
