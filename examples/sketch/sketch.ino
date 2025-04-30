@@ -204,7 +204,6 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap)
 
 void setup()
 {
-
     Serial.begin(115200);
 
     TJpgDec.setSwapBytes(true);
@@ -215,9 +214,6 @@ void setup()
 #endif
 
     bool status;
-    status = setupDisplay();
-    Serial.print("setupDisplay status ");
-    Serial.println(status);
 
     status = setupSDCard();
     Serial.print("setupSDCard status ");
@@ -234,6 +230,7 @@ void setup()
     status = setupCamera();
     Serial.print("setupCamera status ");
     Serial.println(status);
+
     if (!status)
     {
         delay(10000);
@@ -245,6 +242,21 @@ void setup()
     Serial.print("Camera Ready! Use 'http://");
     Serial.print(ipAddress);
     Serial.println("' to connect");
+
+// แสดงข้อความบน TFT
+#if defined(ENABLE_TFT)
+#if defined(CAMERA_MODEL_TTGO_T_CAMERA_PLUS)
+    tft.init();
+    tft.setRotation(0);
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextSize(2);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("I GET", tft.width() / 2, tft.height() / 2);
+    tft.drawString("HEE KUY TAD", tft.width() / 2, tft.height() / 2 + 20);
+    pinMode(TFT_BL_PIN, OUTPUT);
+    digitalWrite(TFT_BL_PIN, HIGH);
+#endif
+#endif
 }
 
 void loopDisplay()
