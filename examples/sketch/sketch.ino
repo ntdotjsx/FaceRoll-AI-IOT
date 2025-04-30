@@ -33,7 +33,8 @@ TFT_eSPI tft = TFT_eSPI();
 
 bool sendToAI(camera_fb_t *fb)
 {
-    if (!fb) return false;
+    if (!fb)
+        return false;
 
     WiFiClient client;
     HTTPClient http;
@@ -48,13 +49,16 @@ bool sendToAI(camera_fb_t *fb)
     body += "Content-Type: image/jpeg\r\n\r\n";
 
     // ส่งคำขอ POST
-    int httpResponseCode = http.POST(body + String((char*)fb->buf, fb->len) + "\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--\r\n");
+    int httpResponseCode = http.POST(body + String((char *)fb->buf, fb->len) + "\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--\r\n");
 
-    if (httpResponseCode > 0) {
+    if (httpResponseCode > 0)
+    {
         String response = http.getString();
         Serial.println("🧠 Response from AI:");
         Serial.println(response);
-    } else {
+    }
+    else
+    {
         Serial.printf("❌ POST failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
     }
 
@@ -174,7 +178,7 @@ bool setupCamera()
     if (psramFound())
     {
         config.frame_size = FRAMESIZE_UXGA;
-        config.jpeg_quality = 10;
+        config.jpeg_quality = 1;
         config.fb_count = 2;
     }
     else
@@ -195,13 +199,18 @@ bool setupCamera()
 
     sensor_t *s = esp_camera_sensor_get();
     // initial sensors are flipped vertically and colors are a bit saturated
-    if (s->id.PID == OV3660_PID)
-    {
-        s->set_vflip(s, 1);       // flip it back
-        s->set_brightness(s, 1);  // up the blightness just a bit
-        s->set_saturation(s, -2); // lower the saturation
-    }
-    // drop down frame size for higher initial frame rate
+    // if (s->id.PID == OV3660_PID)
+    // {
+    //     s->set_vflip(s, 1);       // flip it back
+    //     s->set_brightness(s, 1);  // up the blightness just a bit
+    //     s->set_saturation(s, -2); // lower the saturation
+    // }
+
+    s->set_contrast(s, 1);
+    s->set_brightness(s, 1);  // up the blightness just a bit
+    s->set_saturation(s, -2); // lower the saturation
+
+    s->set_hmirror(s, 1);
     s->set_framesize(s, FRAMESIZE_QVGA);
 
     return true;
