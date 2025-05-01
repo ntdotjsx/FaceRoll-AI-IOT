@@ -317,11 +317,11 @@ void loopDisplay()
     String wifiStatus;
     if (WiFi.status() == WL_CONNECTED)
     {
-        wifiStatus = "WiFi: " + String(WIFI_SSID); // หรือใช้ "Connected" เฉย ๆ ก็ได้
+        wifiStatus = "SERVER: ON"; // หรือใช้ "Connected" เฉย ๆ ก็ได้
     }
     else
     {
-        wifiStatus = "WiFi: Disconnected";
+        wifiStatus = "SERVER: OFF";
     }
 
     tft.drawString(response, tft.width() / 2, 38);
@@ -347,24 +347,63 @@ void checkToggleButton()
         unsigned long now = millis();
         if (now - lastButtonPress > debounceDelay)
         {
-            autoSendEnabled = !autoSendEnabled;
-            Serial.println(autoSendEnabled ? "🟢 Auto Send: ON" : "🔴 Auto Send: OFF");
+            // เคลียร์หน้าจอ
+            tft.fillRect(0, 0, tft.width(), 20, TFT_BLACK); // เคลียร์ข้อความเดิม
 
-// อัพเดตหน้าจอแสดงสถานะด้วยถ้ามีจอ
-#if defined(ENABLE_TFT)
-            tft.fillRect(0, 0, tft.width(), 20, TFT_BLACK); // เคลียร์หัวจอ
-            tft.setCursor(0, 0);
-            if (autoSendEnabled)
+            // ตรวจสอบสถานะ WiFi
+            if (WiFi.status() != WL_CONNECTED)
             {
-                tft.setTextColor(TFT_GREEN, TFT_BLACK); // ON = เขียว
-                tft.print("Auto: ON");
+                Serial.println("❌ WiFi Not Connected, Trying to Reconnect...");
+                // พยายามเชื่อมต่อใหม่
+                WiFi.begin(WIFI_SSID, WIFI_PASSWD);
+
+                unsigned long reconnectStartTime = millis();
+                while (WiFi.status() != WL_CONNECTED && millis() - reconnectStartTime < 10000) // ลองเชื่อมต่อ 10 วินาที
+                {
+                    delay(500);
+                    Serial.print(".");
+                }
+
+                if (WiFi.status() == WL_CONNECTED)
+                {
+                    Serial.println("✅ Reconnected to WiFi!");
+                    ipAddress = WiFi.localIP().toString();
+
+                    // แสดงข้อความการเชื่อมต่อ WiFi บน TFT
+                    tft.setTextColor(TFT_GREEN, TFT_BLACK);
+                    tft.setTextSize(2);
+                    tft.drawString("WiFi Connected", tft.width() / 2 - 70, tft.height() / 2 - 20);
+                }
+                else
+                {
+                    Serial.println("❌ Failed to Reconnect to WiFi");
+
+                    // แสดงข้อความไม่สามารถเชื่อมต่อ WiFi บน TFT
+                    tft.setTextColor(TFT_RED, TFT_BLACK);
+                    tft.setTextSize(2);
+                    tft.drawString("WiFi Failed", tft.width() / 2 - 70, tft.height() / 2 - 20);
+                }
             }
             else
             {
-                tft.setTextColor(TFT_RED, TFT_BLACK); // OFF = แดง
-                tft.print("Auto: OFF");
-            }
+                // หาก WiFi เชื่อมต่อแล้ว, สามารถเปิด/ปิดการส่งอัตโนมัติได้
+                autoSendEnabled = !autoSendEnabled;
+                Serial.println(autoSendEnabled ? "🟢 Auto Send: ON" : "🔴 Auto Send: OFF");
+
+                // อัพเดตหน้าจอแสดงสถานะด้วยถ้ามีจอ
+#if defined(ENABLE_TFT)
+                tft.fillRect(0, 0, tft.width(), 20, TFT_BLACK); // เคลียร์หัวจอ
+                tft.setCursor(0, 0);
+                if (autoSendEnabled)
+                {
+                    tft.setTextColor(TFT_GREEN, TFT_BLACK); // ON = เขียว
+                }
+                else
+                {
+                    tft.setTextColor(TFT_RED, TFT_BLACK); // OFF = แดง
+                }
 #endif
+            }
 
             lastButtonPress = now;
         }
@@ -373,6 +412,9 @@ void checkToggleButton()
 
 void loop()
 {
+    // เคลียร์พื้นที่ข้อความก่อนหน้าบนหน้าจอ
+    tft.fillRect(0, 0, tft.width(), 20, TFT_BLACK); // เคลียร์พื้นที่แถวบนที่แสดงข้อความ
+
     loopDisplay();
     checkToggleButton();
 
