@@ -266,19 +266,6 @@ void setup()
     }
 
     setupNetwork();
-#if defined(ENABLE_TFT)
-#if defined(CAMERA_MODEL_TTGO_T_CAMERA_PLUS)
-    tft.init();
-    tft.setRotation(0);
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextSize(2);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("I GET", tft.width() / 2, tft.height() / 2);
-    tft.drawString("HEE KUY TAD", tft.width() / 2, tft.height() / 2 + 20);
-    pinMode(TFT_BL_PIN, OUTPUT);
-    digitalWrite(TFT_BL_PIN, HIGH);
-#endif
-#endif
 }
 
 void loopDisplay()
@@ -316,12 +303,33 @@ void loopDisplay()
     esp_camera_fb_return(fb);
 }
 
+// void loop()
+// {
+//     loopDisplay();
+//     if (digitalRead(BUTTON_PIN) == LOW)
+//     {
+//         sensor_t *s = esp_camera_sensor_get();
+
+//         camera_fb_t *fb = esp_camera_fb_get();
+//         if (fb)
+//         {
+//             sendToAI(fb);
+//             esp_camera_fb_return(fb);
+//         }
+//     }
+// }
+
+unsigned long lastSendTime = 0;
+const unsigned long sendInterval = 5000; // ทุก 5 วิ
+
 void loop()
 {
     loopDisplay();
-    if (digitalRead(BUTTON_PIN) == LOW)
+
+    unsigned long now = millis();
+    if (now - lastSendTime >= sendInterval)
     {
-        sensor_t *s = esp_camera_sensor_get();
+        lastSendTime = now;
 
         camera_fb_t *fb = esp_camera_fb_get();
         if (fb)
