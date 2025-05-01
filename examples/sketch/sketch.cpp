@@ -16,8 +16,8 @@
 /***************************************
  *  WiFi
  **************************************/
-#define WIFI_SSID "MOJI"
-#define WIFI_PASSWD "88889999"
+#define WIFI_SSID "Bonus"
+#define WIFI_PASSWD "123456789"
 
 #define BUTTON_PIN 23
 
