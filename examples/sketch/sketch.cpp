@@ -6,6 +6,7 @@
 
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
 
 #define DEFAULT_MEASUR_MILLIS 3000 /* Get sensor time by default (ms)*/
 
@@ -28,6 +29,7 @@
 #endif
 String macAddress = "";
 String ipAddress = "";
+String response = "PRESS START :)";  // กำหนดตัวแปร response ที่ระดับ global
 
 #if defined(ENABLE_TFT)
 // Depend TFT_eSPI library ,See  https://github.com/Bodmer/TFT_eSPI
@@ -60,6 +62,21 @@ bool sendToAI(camera_fb_t *fb)
         String response = http.getString();
         Serial.println("🧠 Response from AI:");
         Serial.println(response);
+
+        // ใช้ ArduinoJson เพื่อแปลงข้อมูล JSON
+        DynamicJsonDocument doc(1024);
+        DeserializationError error = deserializeJson(doc, response);
+        
+        if (!error)
+        {
+            String result = doc["result"].as<String>();      // ดึงค่า "result"
+            float confidence = doc["confidence"].as<float>(); // ดึงค่า "confidence"
+            ::response = result + " " + String(confidence, 2); // สร้างข้อความที่ต้องการ
+        }
+        else
+        {
+            Serial.println("Failed to parse JSON");
+        }
     }
     else
     {
@@ -119,37 +136,6 @@ bool setupPower()
 #if defined(SDCARD_CS_PIN)
 #include <SD.h>
 #endif
-bool setupSDCard()
-{
-    /*
-        T-CameraPlus Board, SD shares the bus with the LCD screen.
-        It does not need to be re-initialized after the screen is initialized.
-        If the screen is not initialized, the initialization SPI bus needs to be turned on.
-    */
-    // SPI.begin(TFT_SCLK_PIN, TFT_MISO_PIN, TFT_MOSI_PIN);
-
-#if defined(SDCARD_CS_PIN)
-    if (!SD.begin(SDCARD_CS_PIN))
-    {
-        tft.setTextColor(TFT_RED);
-        tft.drawString("SDCard begin failed", tft.width() / 2, tft.height() / 2 - 20);
-        tft.setTextColor(TFT_WHITE);
-        return false;
-    }
-    else
-    {
-        String cardInfo = String(((uint32_t)SD.cardSize() / 1024 / 1024));
-        tft.setTextColor(TFT_GREEN);
-        tft.drawString("SDcardSize=[" + cardInfo + "]MB", tft.width() / 2, tft.height() / 2 + 92);
-        tft.setTextColor(TFT_WHITE);
-
-        Serial.print("SDcardSize=[");
-        Serial.print(cardInfo);
-        Serial.println("]MB");
-    }
-#endif
-    return true;
-}
 
 bool setupCamera()
 {
@@ -257,11 +243,6 @@ void setup()
 
     bool status;
 
-    // ตั้งค่า SDCard
-    status = setupSDCard();
-    Serial.print("setupSDCard status ");
-    Serial.println(status);
-
     // ตั้งค่าพลังงาน
     status = setupPower();
     Serial.print("setupPower status ");
@@ -284,12 +265,7 @@ void setup()
         esp_restart();
     }
 
-    // ตั้งค่าเครือข่าย
     setupNetwork();
-    // Serial.print("Camera Ready! Use 'http://");
-    // Serial.print(ipAddress);
-    // Serial.println("' to connect");
-
 #if defined(ENABLE_TFT)
 #if defined(CAMERA_MODEL_TTGO_T_CAMERA_PLUS)
     tft.init();
@@ -315,16 +291,30 @@ void loopDisplay()
     }
 
     // คำนวณตำแหน่งที่ให้ภาพอยู่กลางจอ
-    int x_pos = (tft.width() - fb->width) / 2; // คำนวณตำแหน่ง X (แนวนอน)
+    int x_pos = (tft.width() - fb->width) / 2;   // คำนวณตำแหน่ง X (แนวนอน)
     int y_pos = (tft.height() - fb->height) / 2; // คำนวณตำแหน่ง Y (แนวตั้ง)
 
     tft.startWrite();
     TJpgDec.drawJpg(x_pos, y_pos, fb->buf, fb->len); // วาดภาพที่ตำแหน่งกลางจอ
+
+    String wifiStatus;
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        wifiStatus = "WiFi: " + String(WIFI_SSID); // หรือใช้ "Connected" เฉย ๆ ก็ได้
+    }
+    else
+    {
+        wifiStatus = "WiFi: Disconnected";
+    }
+
+    tft.drawString(response , tft.width() / 2, 38);
+
+    tft.drawString(wifiStatus, tft.width() / 2, tft.height() - tft.fontHeight());
+
     tft.endWrite();
 
     esp_camera_fb_return(fb);
 }
-
 
 void loop()
 {
@@ -332,8 +322,6 @@ void loop()
     if (digitalRead(BUTTON_PIN) == LOW)
     {
         sensor_t *s = esp_camera_sensor_get();
-        s->set_framesize(s, FRAMESIZE_QVGA);
-        delay(100); // รอให้กล้องเปลี่ยนขนาดภาพ
 
         camera_fb_t *fb = esp_camera_fb_get();
         if (fb)
@@ -341,8 +329,5 @@ void loop()
             sendToAI(fb);
             esp_camera_fb_return(fb);
         }
-
-        s->set_framesize(s, FRAMESIZE_QQVGA); // เปลี่ยนกลับ
-        delay(100);
     }
 }
