@@ -44,7 +44,7 @@ bool sendToAI(camera_fb_t *fb)
     HTTPClient http;
 
     // URL ที่จะส่งข้อมูลไปยัง server
-    http.begin(client, "http://2bf2-58-10-245-203.ngrok-free.app/detect");
+    http.begin(client, "http://4f05-58-10-245-203.ngrok-free.app/detect");
     http.addHeader("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"); // กำหนด boundary
 
     // สร้าง body ของ request
