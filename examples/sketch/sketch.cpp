@@ -286,9 +286,9 @@ void setup()
 
     // ตั้งค่าเครือข่าย
     setupNetwork();
-    Serial.print("Camera Ready! Use 'http://");
-    Serial.print(ipAddress);
-    Serial.println("' to connect");
+    // Serial.print("Camera Ready! Use 'http://");
+    // Serial.print(ipAddress);
+    // Serial.println("' to connect");
 
 #if defined(ENABLE_TFT)
 #if defined(CAMERA_MODEL_TTGO_T_CAMERA_PLUS)
