@@ -22,6 +22,9 @@
 
 #define BUTTON_PIN 23
 
+bool isSending = false;
+camera_fb_t *pendingFrame = nullptr;
+
 #include "select_pins.h"
 #include <TJpg_Decoder.h>
 
@@ -86,6 +89,19 @@ bool sendToAI(camera_fb_t *fb)
     http.end();
     return httpResponseCode == 200;
 }
+
+void sendImageTask(void *parameter) {
+    camera_fb_t *fb = (camera_fb_t *)parameter;
+
+    if (fb) {
+        sendToAI(fb);
+        esp_camera_fb_return(fb);
+    }
+
+    isSending = false;
+    vTaskDelete(NULL); // ลบ task ตัวเอง
+}
+
 
 bool setupSensor()
 {
@@ -237,6 +253,16 @@ void setup()
     TJpgDec.setSwapBytes(true);
     TJpgDec.setCallback(tft_output);
 
+    tft.init();
+    tft.setRotation(0);
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextSize(2);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("PLEASE", tft.width() / 2, tft.height() / 2);
+    tft.drawString("WAIT NETWORK", tft.width() / 2, tft.height() / 2 + 20);
+    pinMode(TFT_BL_PIN, OUTPUT);
+    digitalWrite(TFT_BL_PIN, HIGH);
+
 #if defined(I2C_SDA) && defined(I2C_SCL)
     Wire.begin(I2C_SDA, I2C_SCL);
 #endif
@@ -318,24 +344,60 @@ void loopDisplay()
 //         }
 //     }
 // }
-
+bool autoSendEnabled = false;
 unsigned long lastSendTime = 0;
 const unsigned long sendInterval = 5000; // ทุก 5 วิ
 
-void loop()
-{
+unsigned long lastButtonPress = 0;
+const unsigned long debounceDelay = 300; // ms
+
+void checkToggleButton() {
+    if (digitalRead(BUTTON_PIN) == LOW) {
+        unsigned long now = millis();
+        if (now - lastButtonPress > debounceDelay) {
+            autoSendEnabled = !autoSendEnabled;
+            Serial.println(autoSendEnabled ? "🟢 Auto Send: ON" : "🔴 Auto Send: OFF");
+
+            // อัพเดตหน้าจอแสดงสถานะด้วยถ้ามีจอ
+            #if defined(ENABLE_TFT)
+            tft.fillRect(0, 0, tft.width(), 20, TFT_BLACK); // เคลียร์หัวจอ
+            tft.setCursor(0, 0);
+            if (autoSendEnabled) {
+                tft.setTextColor(TFT_GREEN, TFT_BLACK); // ON = เขียว
+                tft.print("Auto: ON");
+            } else {
+                tft.setTextColor(TFT_RED, TFT_BLACK); // OFF = แดง
+                tft.print("Auto: OFF");
+            }
+            #endif
+
+            lastButtonPress = now;
+        }
+    }
+}
+
+void loop() {
     loopDisplay();
+    checkToggleButton();
 
-    unsigned long now = millis();
-    if (now - lastSendTime >= sendInterval)
-    {
-        lastSendTime = now;
+    if (autoSendEnabled && !isSending) {
+        unsigned long now = millis();
+        if (now - lastSendTime >= sendInterval) {
+            lastSendTime = now;
 
-        camera_fb_t *fb = esp_camera_fb_get();
-        if (fb)
-        {
-            sendToAI(fb);
-            esp_camera_fb_return(fb);
+            camera_fb_t *fb = esp_camera_fb_get();
+            if (fb) {
+                isSending = true;
+                xTaskCreatePinnedToCore(
+                    sendImageTask,     // ฟังก์ชันที่รัน
+                    "SendImageTask",   // ชื่อ task
+                    8192,              // Stack size
+                    fb,                // Parameter ส่งภาพ
+                    1,                 // Priority
+                    NULL,              // Task handle
+                    1                  // รันบน Core 1
+                );
+            }
         }
     }
 }
