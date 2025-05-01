@@ -16,8 +16,8 @@
 /***************************************
  *  WiFi
  **************************************/
-#define WIFI_SSID "Bonus"
-#define WIFI_PASSWD "123456789"
+#define WIFI_SSID "MOJI"
+#define WIFI_PASSWD "88889999"
 
 #define BUTTON_PIN 23
 
@@ -44,7 +44,7 @@ bool sendToAI(camera_fb_t *fb)
     HTTPClient http;
 
     // URL ที่จะส่งข้อมูลไปยัง server
-    http.begin(client, "http://4f05-58-10-245-203.ngrok-free.app/detect");
+    http.begin(client, "http://185.84.161.154:8000/detect");
     http.addHeader("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"); // กำหนด boundary
 
     // สร้าง body ของ request
