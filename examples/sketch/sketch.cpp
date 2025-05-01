@@ -32,7 +32,7 @@ camera_fb_t *pendingFrame = nullptr;
 #endif
 String macAddress = "";
 String ipAddress = "";
-String response = "PRESS START :)";  // กำหนดตัวแปร response ที่ระดับ global
+String response = "PRESS START :)"; // กำหนดตัวแปร response ที่ระดับ global
 
 #if defined(ENABLE_TFT)
 // Depend TFT_eSPI library ,See  https://github.com/Bodmer/TFT_eSPI
@@ -69,11 +69,11 @@ bool sendToAI(camera_fb_t *fb)
         // ใช้ ArduinoJson เพื่อแปลงข้อมูล JSON
         DynamicJsonDocument doc(1024);
         DeserializationError error = deserializeJson(doc, response);
-        
+
         if (!error)
         {
-            String result = doc["result"].as<String>();      // ดึงค่า "result"
-            float confidence = doc["confidence"].as<float>(); // ดึงค่า "confidence"
+            String result = doc["result"].as<String>();        // ดึงค่า "result"
+            float confidence = doc["confidence"].as<float>();  // ดึงค่า "confidence"
             ::response = result + " " + String(confidence, 2); // สร้างข้อความที่ต้องการ
         }
         else
@@ -90,10 +90,12 @@ bool sendToAI(camera_fb_t *fb)
     return httpResponseCode == 200;
 }
 
-void sendImageTask(void *parameter) {
+void sendImageTask(void *parameter)
+{
     camera_fb_t *fb = (camera_fb_t *)parameter;
 
-    if (fb) {
+    if (fb)
+    {
         sendToAI(fb);
         esp_camera_fb_return(fb);
     }
@@ -101,7 +103,6 @@ void sendImageTask(void *parameter) {
     isSending = false;
     vTaskDelete(NULL); // ลบ task ตัวเอง
 }
-
 
 bool setupSensor()
 {
@@ -210,8 +211,11 @@ bool setupCamera()
     s->set_saturation(s, -2);
 
     s->set_hmirror(s, 1);
-    s->set_framesize(s, FRAMESIZE_QQVGA); // 160x120 หรือ
-    // s->set_framesize(s, FRAMESIZE_QVGA); // 320x240
+    s->set_framesize(s, FRAMESIZE_QQVGA);
+
+    s->set_gain_ctrl(s, 1);     // เปิด auto gain
+    s->set_exposure_ctrl(s, 1); // เปิด auto exposure
+    s->set_awb_gain(s, 1);      // เปิด auto white balance
 
     return true;
 }
@@ -320,7 +324,7 @@ void loopDisplay()
         wifiStatus = "WiFi: Disconnected";
     }
 
-    tft.drawString(response , tft.width() / 2, 38);
+    tft.drawString(response, tft.width() / 2, 38);
 
     tft.drawString(wifiStatus, tft.width() / 2, tft.height() - tft.fontHeight());
 
@@ -329,21 +333,6 @@ void loopDisplay()
     esp_camera_fb_return(fb);
 }
 
-// void loop()
-// {
-//     loopDisplay();
-//     if (digitalRead(BUTTON_PIN) == LOW)
-//     {
-//         sensor_t *s = esp_camera_sensor_get();
-
-//         camera_fb_t *fb = esp_camera_fb_get();
-//         if (fb)
-//         {
-//             sendToAI(fb);
-//             esp_camera_fb_return(fb);
-//         }
-//     }
-// }
 bool autoSendEnabled = false;
 unsigned long lastSendTime = 0;
 const unsigned long sendInterval = 5000; // ทุก 5 วิ
@@ -351,51 +340,61 @@ const unsigned long sendInterval = 5000; // ทุก 5 วิ
 unsigned long lastButtonPress = 0;
 const unsigned long debounceDelay = 300; // ms
 
-void checkToggleButton() {
-    if (digitalRead(BUTTON_PIN) == LOW) {
+void checkToggleButton()
+{
+    if (digitalRead(BUTTON_PIN) == LOW)
+    {
         unsigned long now = millis();
-        if (now - lastButtonPress > debounceDelay) {
+        if (now - lastButtonPress > debounceDelay)
+        {
             autoSendEnabled = !autoSendEnabled;
             Serial.println(autoSendEnabled ? "🟢 Auto Send: ON" : "🔴 Auto Send: OFF");
 
-            // อัพเดตหน้าจอแสดงสถานะด้วยถ้ามีจอ
-            #if defined(ENABLE_TFT)
+// อัพเดตหน้าจอแสดงสถานะด้วยถ้ามีจอ
+#if defined(ENABLE_TFT)
             tft.fillRect(0, 0, tft.width(), 20, TFT_BLACK); // เคลียร์หัวจอ
             tft.setCursor(0, 0);
-            if (autoSendEnabled) {
+            if (autoSendEnabled)
+            {
                 tft.setTextColor(TFT_GREEN, TFT_BLACK); // ON = เขียว
                 tft.print("Auto: ON");
-            } else {
+            }
+            else
+            {
                 tft.setTextColor(TFT_RED, TFT_BLACK); // OFF = แดง
                 tft.print("Auto: OFF");
             }
-            #endif
+#endif
 
             lastButtonPress = now;
         }
     }
 }
 
-void loop() {
+void loop()
+{
     loopDisplay();
     checkToggleButton();
 
-    if (autoSendEnabled && !isSending) {
+    if (autoSendEnabled && !isSending)
+    {
         unsigned long now = millis();
-        if (now - lastSendTime >= sendInterval) {
+        if (now - lastSendTime >= sendInterval)
+        {
             lastSendTime = now;
 
             camera_fb_t *fb = esp_camera_fb_get();
-            if (fb) {
+            if (fb)
+            {
                 isSending = true;
                 xTaskCreatePinnedToCore(
-                    sendImageTask,     // ฟังก์ชันที่รัน
-                    "SendImageTask",   // ชื่อ task
-                    8192,              // Stack size
-                    fb,                // Parameter ส่งภาพ
-                    1,                 // Priority
-                    NULL,              // Task handle
-                    1                  // รันบน Core 1
+                    sendImageTask,   // ฟังก์ชันที่รัน
+                    "SendImageTask", // ชื่อ task
+                    8192,            // Stack size
+                    fb,              // Parameter ส่งภาพ
+                    1,               // Priority
+                    NULL,            // Task handle
+                    1                // รันบน Core 1
                 );
             }
         }
