@@ -17,8 +17,8 @@
 /***************************************
  *  WiFi
  **************************************/
-#define WIFI_SSID "Bonus"
-#define WIFI_PASSWD "123456789"
+#define WIFI_SSID "Khemmara_2.4GHz"
+#define WIFI_PASSWD "0885815056"
 
 #define BUTTON_PIN 23
 
