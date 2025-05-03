@@ -17,8 +17,8 @@
 /***************************************
  *  WiFi
  **************************************/
-#define WIFI_SSID "Khemmara_2.4GHz"
-#define WIFI_PASSWD "0885815056"
+#define WIFI_SSID "Bonus"
+#define WIFI_PASSWD "123456789"
 
 #define BUTTON_PIN 23
 
@@ -323,7 +323,7 @@ void loopDisplay()
     {
         wifiStatus = "SERVER: OFF";
     }
-
+    tft.fillRect(0, 38 - tft.fontHeight() / 2, tft.width(), tft.fontHeight(), TFT_BLACK);
     tft.drawString(response, tft.width() / 2, 38);
 
     tft.drawString(wifiStatus, tft.width() / 2, tft.height() - tft.fontHeight());
